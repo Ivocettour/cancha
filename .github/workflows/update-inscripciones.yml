@@ -1,4 +1,4 @@
-name: Actualizar inscripciones
+name: Actualizar Inscripciones
 
 on:
   issues:
@@ -9,23 +9,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Clonar el repositorio
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
+      # 2. Instalar Node.js
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      - name: Instalar dependencias
-        run: npm install
+      # 3. Instalar GitHub CLI
+      - name: Instalar GitHub CLI
+        uses: dawidd6/action-install-gh-cli@v2
 
-      - name: Actualizar inscripciones
-        run: node update-inscripciones.js
-
-      - name: Confirmar y subir cambios
+      # 4. Obtener issues y actualizar el archivo JSON
+      - name: Actualizar inscripciones.json
         run: |
-          git config user.name "GitHub Actions Bot"
+          gh issue list --json title,body --state open > temp_issues.json
+          node -e '
+          const fs = require("fs");
+          const issues = JSON.parse(fs.readFileSync("temp_issues.json", "utf-8"));
+          const inscripciones = issues.map(issue => {
+            const [categoriaLine, horarioLine] = issue.body.split("\\n");
+            return {
+              nombre: issue.title.replace("Inscripción: ", "").trim(),
+              categoria: categoriaLine.replace("**Categoría:** ", "").trim(),
+              horario: horarioLine.replace("**Problemas de horario:** ", "").trim() || "Ninguno",
+            };
+          });
+          fs.writeFileSync("inscripciones.json", JSON.stringify(inscripciones, null, 2), "utf-8");
+          '
+
+      # 5. Confirmar y subir cambios al repositorio
+      - name: Subir cambios
+        run: |
+          git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add inscripciones.json
           git commit -m "Actualizar inscripciones"
