@@ -1,0 +1,32 @@
+name: Actualizar inscripciones
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  update-inscripciones:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Actualizar inscripciones
+        run: node update-inscripciones.js
+
+      - name: Confirmar y subir cambios
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add inscripciones.json
+          git commit -m "Actualizar inscripciones"
+          git push
