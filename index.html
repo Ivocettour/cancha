@@ -7,12 +7,7 @@
 </head>
 <body>
   <h1>Inscripción al Torneo de Pádel</h1>
-
-  <!-- Botón para cargar el archivo .docx -->
-  <input type="file" id="tokenFile" accept=".docx">
-  <p id="fileStatus">Cargá el archivo con el token para continuar.</p>
-
-  <form id="registrationForm" style="display: none;">
+  <form id="registrationForm">
     <label>Nombre completo:</label><br>
     <input type="text" id="name" required><br><br>
     <label>Categoría:</label><br>
@@ -30,19 +25,65 @@
 
   <script>
     const GITHUB_API_URL = 'https://api.github.com/repos/Ivocettour/cancha/issues';
-    let TOKEN = null; // Inicializamos el token como null
+    let TOKEN = ''; // Inicializamos el token.
 
-    // Leer el archivo de token
-    document.getElementById('tokenFile').addEventListener('change', async (event) => {
-      const file = event.target.files[0];
-      if (!file) {
-        alert('Por favor, seleccioná un archivo.');
+    // Función para cargar automáticamente el token al iniciar la página.
+    async function loadToken() {
+      try {
+        const response = await fetch('token');
+        if (!response.ok) throw new Error('No se pudo cargar el token.');
+        TOKEN = await response.text();
+      } catch (error) {
+        console.error('Error al cargar el token:', error);
+        alert('Hubo un problema al cargar el token. Verifica el archivo.');
+      }
+    }
+
+    // Llamamos a la función para cargar el token al iniciar.
+    loadToken();
+
+    document.getElementById('registrationForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const category = document.getElementById('category').value;
+      const schedule = document.getElementById('schedule').value.trim();
+
+      if (!name || !category) {
+        alert('Por favor, completa todos los campos.');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const fileContent = e.target.result;
+      if (!TOKEN) {
+        alert('El token no está disponible. Verifica el archivo.');
+        return;
+      }
 
-        // Intentar extraer el contenido como texto plano
-        TOKEN = fileContent.trim(); // Asegurarnos de que el token esté limpio
+      const issueData = {
+        title: `Inscripción: ${name}`,
+        body: `**Categoría:** ${category}\n**Problemas de horario:** ${schedule || 'Ninguno'}`,
+      };
+
+      try {
+        const response = await fetch(GITHUB_API_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `token ${TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(issueData),
+        });
+
+        if (response.ok) {
+          alert('Inscripción enviada correctamente.');
+          document.getElementById('registrationForm').reset();
+        } else {
+          alert('Error al enviar la inscripción.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+  </script>
+</body>
+</html>
