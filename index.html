@@ -7,7 +7,12 @@
 </head>
 <body>
   <h1>Inscripción al Torneo de Pádel</h1>
-  <form id="registrationForm">
+
+  <!-- Botón para cargar el archivo .docx -->
+  <input type="file" id="tokenFile" accept=".docx">
+  <p id="fileStatus">Cargá el archivo con el token para continuar.</p>
+
+  <form id="registrationForm" style="display: none;">
     <label>Nombre completo:</label><br>
     <input type="text" id="name" required><br><br>
     <label>Categoría:</label><br>
@@ -25,44 +30,19 @@
 
   <script>
     const GITHUB_API_URL = 'https://api.github.com/repos/Ivocettour/cancha/issues';
-    const TOKEN = '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'; // Reemplazar con el token personal de GitHub.
+    let TOKEN = null; // Inicializamos el token como null
 
-    document.getElementById('registrationForm').addEventListener('submit', (event) => {
-      event.preventDefault();
-
-      const name = document.getElementById('name').value.trim();
-      const category = document.getElementById('category').value;
-      const schedule = document.getElementById('schedule').value.trim();
-
-      if (!name || !category) {
-        alert('Por favor, completa todos los campos.');
+    // Leer el archivo de token
+    document.getElementById('tokenFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        alert('Por favor, seleccioná un archivo.');
         return;
       }
 
-      const issueData = {
-        title: `Inscripción: ${name}`,
-        body: `**Categoría:** ${category}\n**Problemas de horario:** ${schedule || 'Ninguno'}`,
-      };
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const fileContent = e.target.result;
 
-      fetch(GITHUB_API_URL, {
-        method: 'POST',
-        headers: {
-          Authorization: `token ${TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(issueData),
-      })
-        .then((response) => {
-          if (response.ok) {
-            alert('Inscripción enviada correctamente.');
-            document.getElementById('registrationForm').reset();
-          } else {
-            alert('Error al enviar la inscripción.');
-          }
-        })
-        .catch((error) => console.error('Error:', error));
-    });
-  </script>
-</body>
-</html>
-
+        // Intentar extraer el contenido como texto plano
+        TOKEN = fileContent.trim(); // Asegurarnos de que el token esté limpio
