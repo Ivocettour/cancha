@@ -51,17 +51,6 @@
     button:hover {
       background-color: #0056b3;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #f1f1f1;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
   </style>
 </head>
 <body>
@@ -85,19 +74,13 @@
 
       <button type="submit">Enviar inscripción</button>
     </form>
-    
-    <h2>Lista de Inscritos</h2>
-    <ul id="playerList"></ul>
   </div>
 
   <script>
-    const API_URL = 'https://tu-backend-url.com'; // Reemplaza con la URL del backend
+    const GITHUB_API_URL = 'https://api.github.com/repos/tu_usuario/tu_repositorio/issues'; // Cambiá estos valores
+    const TOKEN = 'tu_token_de_acceso'; // Token con permisos de `repo`
 
     const form = document.getElementById('registrationForm');
-    const playerList = document.getElementById('playerList');
-
-    // Cargar inscripciones al iniciar
-    document.addEventListener('DOMContentLoaded', fetchInscriptions);
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -111,36 +94,29 @@
         return;
       }
 
-      // Enviar inscripción al servidor
-      fetch(`${API_URL}/inscripciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: name, categoria: category, horario: schedule }),
-      })
-        .then((res) => res.json())
-        .then(() => {
-          fetchInscriptions(); // Actualizar lista
-          form.reset();
-        })
-        .catch((err) => console.error('Error:', err));
-    });
+      const issueData = {
+        title: `Inscripción: ${name}`,
+        body: `**Categoría**: ${category}\n**Problemas de horario**: ${schedule || 'Ninguno'}`,
+      };
 
-    function fetchInscriptions() {
-      fetch(`${API_URL}/inscripciones`)
-        .then((res) => res.json())
-        .then((players) => {
-          playerList.innerHTML = '';
-          players.forEach((player) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <strong>${player.nombre}</strong> - Categoría: ${player.categoria}<br>
-              Problemas de horario: ${player.horario || 'Ninguno'}
-            `;
-            playerList.appendChild(li);
-          });
+      fetch(GITHUB_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `token ${TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(issueData),
+      })
+        .then((response) => {
+          if (response.ok) {
+            alert('Inscripción enviada correctamente.');
+            form.reset();
+          } else {
+            alert('Error al enviar la inscripción.');
+          }
         })
-        .catch((err) => console.error('Error:', err));
-    }
+        .catch((error) => console.error('Error:', error));
+    });
   </script>
 </body>
 </html>
