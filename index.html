@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscripción Torneo de Pádel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+    input, select, textarea, button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    textarea {
+      resize: none;
+      height: 100px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f1f1f1;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Inscripción al Torneo de Pádel</h1>
+    <form id="registrationForm">
+      <label for="name">Nombre completo:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="category">Categoría:</label>
+      <select id="category" name="category" required>
+        <option value="" disabled selected>Selecciona tu categoría</option>
+        <option value="Principiante">Principiante</option>
+        <option value="Intermedio">Intermedio</option>
+        <option value="Avanzado">Avanzado</option>
+        <option value="Profesional">Profesional</option>
+      </select>
+
+      <label for="schedule">Problemas de horario:</label>
+      <textarea id="schedule" name="schedule"></textarea>
+
+      <button type="submit">Enviar inscripción</button>
+    </form>
+    
+    <h2>Lista de Inscritos</h2>
+    <ul id="playerList"></ul>
+  </div>
+
+  <script>
+    const API_URL = 'https://tu-backend-url.com'; // Reemplaza con la URL del backend
+
+    const form = document.getElementById('registrationForm');
+    const playerList = document.getElementById('playerList');
+
+    // Cargar inscripciones al iniciar
+    document.addEventListener('DOMContentLoaded', fetchInscriptions);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const category = document.getElementById('category').value;
+      const schedule = document.getElementById('schedule').value.trim();
+
+      if (!name || !category) {
+        alert('Por favor, completa todos los campos obligatorios.');
+        return;
+      }
+
+      // Enviar inscripción al servidor
+      fetch(`${API_URL}/inscripciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: name, categoria: category, horario: schedule }),
+      })
+        .then((res) => res.json())
+        .then(() => {
+          fetchInscriptions(); // Actualizar lista
+          form.reset();
+        })
+        .catch((err) => console.error('Error:', err));
+    });
+
+    function fetchInscriptions() {
+      fetch(`${API_URL}/inscripciones`)
+        .then((res) => res.json())
+        .then((players) => {
+          playerList.innerHTML = '';
+          players.forEach((player) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <strong>${player.nombre}</strong> - Categoría: ${player.categoria}<br>
+              Problemas de horario: ${player.horario || 'Ninguno'}
+            `;
+            playerList.appendChild(li);
+          });
+        })
+        .catch((err) => console.error('Error:', err));
+    }
+  </script>
+</body>
+</html>
+

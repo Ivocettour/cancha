@@ -1,0 +1,12 @@
+[
+    {
+      "nombre": "Juan Pérez",
+      "categoria": "Avanzado",
+      "horario": "Mañana"
+    },
+    {
+      "nombre": "María López",
+      "categoria": "Intermedio",
+      "horario": "Tarde"
+    }
+  ]  
