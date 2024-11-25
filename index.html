@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+  <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -27,7 +28,7 @@
     const GITHUB_API_URL = 'https://api.github.com/repos/Ivocettour/cancha/issues';
     let TOKEN = ''; // Inicializamos el token.
 
-    // Función para cargar automáticamente el token al iniciar la página.
+    // Cargar el token desde un archivo externo.
     async function loadToken() {
       try {
         const response = await fetch('token');
@@ -39,7 +40,7 @@
       }
     }
 
-    // Llamamos a la función para cargar el token al iniciar.
+    // Llamar a la función para cargar el token al iniciar la página.
     loadToken();
 
     document.getElementById('registrationForm').addEventListener('submit', async (event) => {
@@ -87,3 +88,4 @@
   </script>
 </body>
 </html>
+
