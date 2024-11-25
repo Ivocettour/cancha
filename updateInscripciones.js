@@ -1,66 +1,50 @@
-const fetch = require('node-fetch'); // Para hacer solicitudes HTTP
-const fs = require('fs'); // Para leer y escribir archivos locales
+const fs = require('fs');
+const { execSync } = require('child_process');
 
-// Configuración
-const GITHUB_API_URL = 'https://api.github.com';
-const OWNER = 'tu_usuario_de_github'; // Reemplazá con tu usuario
-const REPO = 'tu_repositorio'; // Reemplazá con el nombre del repo
-const FILE_PATH = 'inscripciones.json'; // Ruta del archivo en el repositorio
-const TOKEN = 'tu_token_de_acceso'; // Reemplazá con tu token
+// Ruta al archivo de inscripciones
+const INSCRIPCIONES_FILE = 'inscripciones.json';
 
-// Función para obtener el contenido actual del archivo
-async function getFileContent() {
-  const url = `${GITHUB_API_URL}/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`;
-  const response = await fetch(url, {
-    headers: { Authorization: `token ${TOKEN}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error al obtener el archivo: ${response.statusText}`);
+// Obtener datos de los issues creados
+function fetchIssues() {
+  try {
+    const issuesJSON = execSync('gh issue list --json title,body --state open', {
+      encoding: 'utf-8',
+    });
+    return JSON.parse(issuesJSON);
+  } catch (error) {
+    console.error('Error al obtener los issues:', error.message);
+    return [];
   }
-
-  const data = await response.json();
-  return {
-    content: Buffer.from(data.content, 'base64').toString(),
-    sha: data.sha, // Necesario para actualizar el archivo
-  };
 }
 
-// Función para actualizar el archivo con una nueva inscripción
-async function updateFile(newEntry) {
-  const { content, sha } = await getFileContent();
-  const inscripciones = JSON.parse(content); // Parsear el contenido actual
-  inscripciones.push(newEntry); // Agregar la nueva inscripción
-
-  const updatedContent = Buffer.from(JSON.stringify(inscripciones, null, 2)).toString('base64');
-
-  // Actualizar el archivo en GitHub
-  const url = `${GITHUB_API_URL}/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`;
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message: 'Agregar nueva inscripción',
-      content: updatedContent,
-      sha,
-    }),
+// Actualizar el archivo de inscripciones
+function updateInscripciones(issues) {
+  const nuevasInscripciones = issues.map((issue) => {
+    const [categoriaLine, horarioLine] = issue.body.split('\n');
+    return {
+      nombre: issue.title.replace('Inscripción: ', '').trim(),
+      categoria: categoriaLine.replace('**Categoría**: ', '').trim(),
+      horario: horarioLine.replace('**Problemas de horario**: ', '').trim() || 'Ninguno',
+    };
   });
 
-  if (!response.ok) {
-    throw new Error(`Error al actualizar el archivo: ${response.statusText}`);
+  let inscripcionesExistentes = [];
+  if (fs.existsSync(INSCRIPCIONES_FILE)) {
+    inscripcionesExistentes = JSON.parse(fs.readFileSync(INSCRIPCIONES_FILE, 'utf-8'));
   }
 
-  console.log('Archivo actualizado con éxito.');
+  const inscripcionesActualizadas = [...inscripcionesExistentes, ...nuevasInscripciones];
+  fs.writeFileSync(INSCRIPCIONES_FILE, JSON.stringify(inscripcionesActualizadas, null, 2), 'utf-8');
+  console.log('Archivo de inscripciones actualizado.');
 }
 
-// Ejemplo: Agregar una inscripción
-const nuevaInscripcion = {
-  nombre: 'Carlos Gómez',
-  categoria: 'Avanzado',
-  horario: 'Tarde',
-};
+function main() {
+  const issues = fetchIssues();
+  if (issues.length > 0) {
+    updateInscripciones(issues);
+  } else {
+    console.log('No hay nuevos issues para procesar.');
+  }
+}
 
-updateFile(nuevaInscripcion).catch((err) => console.error(err.message));
+main();
